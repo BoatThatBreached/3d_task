@@ -29,9 +29,15 @@ class Example(QWidget):
         self.drawPoints(qp)
         qp.setPen(QPen(Qt.GlobalColor.red, 8))
         qp.end()
-        
+    def mousePressEvent(self, e):
+        self.lastPos = e.position()
     def mouseMoveEvent(self, e):
-        self.dots.append((e.position().x(), e.position().y()))
+        
+        if e.button()==Qt.LeftButton:
+            self.dots.append((e.position().x(), e.position().y()))
+        if e.button()==Qt.MiddleButton:
+            offset = (e.position().x()-self.lastPos.x(), e.position().y()-self.lastPos.y())
+            self.dots = list(map(lambda t: (t[0]+offset[0], t[1]+offset[1]), dots))
         self.update()
 
     def mouseReleaseEvent(self, e):

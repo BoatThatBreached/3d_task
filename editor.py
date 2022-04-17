@@ -35,6 +35,17 @@ class Example(QWidget):
     def mousePressEvent(self, e):
         self.lastPos = e.position()
         self.lastButton = e.button()
+    def wheelEvent(self, e):
+        p = (e.position().x(), e.position().y())
+        coeff = 1+e.angleDelta().y()/3600
+        def sc(t):
+            d = ((t[0]-p[0])*coeff, (t[1]-p[1])*coeff)
+            return (p[0]+d[0], p[1]+d[1])
+        self.dots = list(map(sc, self.dots))
+        self.update()
+        
+        
+        
 
     def mouseMoveEvent(self, e):
         if self.lastButton == Qt.MouseButton.LeftButton:
@@ -42,7 +53,7 @@ class Example(QWidget):
         if self.lastButton == Qt.MouseButton.MiddleButton:
             offset = (e.position().x()-self.lastPos.x(), e.position().y()-self.lastPos.y())
             self.dots = list(map(lambda t: (t[0]+offset[0], t[1]+offset[1]), self.dots))
-
+        
         self.lastPos = e.position()
         self.update()
 

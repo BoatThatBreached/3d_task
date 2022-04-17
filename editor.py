@@ -1,4 +1,4 @@
-#print('this is the editor')
+# print('this is the editor')
 import random
 
 import PyQt6.QtCore
@@ -35,7 +35,6 @@ class Example(QWidget):
         self.setWindowTitle('Points')
         self.show()
 
-
     def paintEvent(self, e):
         qp = QPainter()
         qp.begin(self)
@@ -43,7 +42,6 @@ class Example(QWidget):
         self.drawLines(qp)
         qp.setPen(QPen(Qt.GlobalColor.red, 8))
         qp.end()
-
 
     def mousePressEvent(self, e):
         self.lastPos = e.position()
@@ -58,15 +56,16 @@ class Example(QWidget):
 
     def wheelEvent(self, e):
         p = e.position()
-        coeff = 1+e.angleDelta().y()/3600
+        coeff = 1 + e.angleDelta().y() / 3600
+
         def expand(t):
             d = (t - p) * coeff
             return p + d
+
         self.dots = list(map(expand, self.dots))
         self.lines = list(map(lambda line: self.getLine(
             expand(line.p1()), expand(line.p2())), self.lines))
         self.update()
-        
 
     def mouseMoveEvent(self, e):
         if self.lastButton == Qt.MouseButton.LeftButton:
@@ -75,21 +74,23 @@ class Example(QWidget):
             offset = e.position() - self.lastPos
             self.dots = list(map(lambda t: t + offset, self.dots))
             self.lines = list(map(lambda t: self.getLine(t.p1() + offset, t.p2() + offset), self.lines))
-        
+
         self.lastPos = e.position()
         self.update()
 
     def drawPoints(self, qp):
+        size = self.size()
+
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
-        for d in self.dots:
+        for d in filter(lambda point: not (point.x() < 0 or point.x() > size.width() \
+                                      or point.y() < 0 or point.y() > size.height()), self.dots):
             qp.drawEllipse(d.x(), d.y(), 3, 3)
 
-
     def drawLines(self, qp):
+        #TODO: optimize lines
         qp.setPen(QPen(Qt.GlobalColor.red, 5))
         for d in self.lines:
             qp.drawLine(d)
-
 
 
 if __name__ == "__main__":

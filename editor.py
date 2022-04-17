@@ -20,14 +20,17 @@ class Example(QWidget):
         return PyQt6.QtCore.QPointF(x, y)
 
     def __init__(self):
+        
+        self.dots = []
+        self.lines = []
+        self.lastPos = self.getPoint(0, 0)
+        self.lineDot = None
+
         super().__init__()
         self.initUI()
 
-        self.dots = []
-        self.lastPos = self.getPoint(0, 0)
 
-        self.lines = []
-        self.lineDot = None
+        
 
     def initUI(self):
 
@@ -80,8 +83,8 @@ class Example(QWidget):
 
     def drawPoints(self, qp):
         size = self.size()
-
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
+
         for d in filter(lambda point: not (point.x() < 0 or point.x() > size.width() \
                                       or point.y() < 0 or point.y() > size.height()), self.dots):
             qp.drawEllipse(d.x(), d.y(), 3, 3)

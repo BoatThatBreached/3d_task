@@ -2,7 +2,7 @@
 import random
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
 
 import sys  # Только для доступа к аргументам командной строки
@@ -12,7 +12,7 @@ class Example(QWidget):
 
     def __init__(self):
         super().__init__()
-
+        self.dots = []
         self.initUI()
 
 
@@ -28,18 +28,24 @@ class Example(QWidget):
         qp = QPainter()
         qp.begin(self)
         self.drawPoints(qp)
+        qp.setPen(QPen(Qt.GlobalColor.red, 8))
+        #qp.drawEllipse(100, 100, 50, 60)
         qp.end()
-
+        
+    def mouseMoveEvent(self, e):
+        self.dots.append((int(e.position().x()), int(e.position().y())))
+        self.paintEvent(e)
+    def mouseReleaseEvent(self, e):
+        self.paintEvent(e)
+        
 
     def drawPoints(self, qp):
 
-        qp.setPen(Qt.GlobalColor.red)
+        qp.setPen(QPen(Qt.GlobalColor.green, 5))
         size = self.size()
 
-        for i in range(1000):
-            x = random.randint(1, size.width()-1)
-            y = random.randint(1, size.height()-1)
-            qp.drawPoint(x, y)
+        for d in self.dots:
+            qp.drawEllipse(d[0], d[1], 3,3)
 
 
 

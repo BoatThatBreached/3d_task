@@ -11,11 +11,23 @@ import sys  # Только для доступа к аргументам ком�
 
 class Example(QWidget):
 
+    @staticmethod
+    def getLine(x, y):
+        return PyQt6.QtCore.QLineF(x, y)
+
+    @staticmethod
+    def getPoint(x, y):
+        return PyQt6.QtCore.QPointF(x, y)
+
     def __init__(self):
         super().__init__()
-        self.dots = []
         self.initUI()
-        self.lastPos = PyQt6.QtCore.QPointF(0, 0)
+
+        self.dots = []
+        self.lastPos = self.getPoint(0, 0)
+
+        self.lines = []
+        self.lineDot = None
 
     def initUI(self):
 
@@ -28,6 +40,7 @@ class Example(QWidget):
         qp = QPainter()
         qp.begin(self)
         self.drawPoints(qp)
+        self.drawLines(qp)
         qp.setPen(QPen(Qt.GlobalColor.red, 8))
         qp.end()
 
@@ -35,24 +48,33 @@ class Example(QWidget):
     def mousePressEvent(self, e):
         self.lastPos = e.position()
         self.lastButton = e.button()
-    def wheelEvent(self, e):
-        p = (e.position().x(), e.position().y())
-        coeff = 1+e.angleDelta().y()/3600
-        def sc(t):
-            d = ((t[0]-p[0])*coeff, (t[1]-p[1])*coeff)
-            return (p[0]+d[0], p[1]+d[1])
-        self.dots = list(map(sc, self.dots))
+        if self.lastButton == Qt.MouseButton.RightButton:
+            if not self.lineDot:
+                self.lineDot = e.position()
+            else:
+                self.lines.append(self.getLine(self.lineDot, e.position()))
+                self.lineDot = None
         self.update()
-        
-        
+
+    def wheelEvent(self, e):
+        p = e.position()
+        coeff = 1+e.angleDelta().y()/3600
+        def expand(t):
+            d = (t - p) * coeff
+            return p + d
+        self.dots = list(map(expand, self.dots))
+        self.lines = list(map(lambda line: self.getLine(
+            expand(line.p1()), expand(line.p2())), self.lines))
+        self.update()
         
 
     def mouseMoveEvent(self, e):
         if self.lastButton == Qt.MouseButton.LeftButton:
-            self.dots.append((e.position().x(), e.position().y()))
+            self.dots.append(e.position())
         if self.lastButton == Qt.MouseButton.MiddleButton:
-            offset = (e.position().x()-self.lastPos.x(), e.position().y()-self.lastPos.y())
-            self.dots = list(map(lambda t: (t[0]+offset[0], t[1]+offset[1]), self.dots))
+            offset = e.position() - self.lastPos
+            self.dots = list(map(lambda t: t + offset, self.dots))
+            self.lines = list(map(lambda t: self.getLine(t.p1() + offset, t.p2() + offset), self.lines))
         
         self.lastPos = e.position()
         self.update()
@@ -60,7 +82,13 @@ class Example(QWidget):
     def drawPoints(self, qp):
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
         for d in self.dots:
-            qp.drawEllipse(d[0], d[1], 3, 3)
+            qp.drawEllipse(d.x(), d.y(), 3, 3)
+
+
+    def drawLines(self, qp):
+        qp.setPen(QPen(Qt.GlobalColor.red, 5))
+        for d in self.lines:
+            qp.drawLine(d)
 
 
 

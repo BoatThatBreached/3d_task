@@ -1,7 +1,8 @@
 #print('this is the editor')
 import random
 
-from PyQt6.QtCore import Qt, QSize
+import PyQt6.QtCore
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
 
@@ -14,7 +15,7 @@ class Example(QWidget):
         super().__init__()
         self.dots = []
         self.initUI()
-
+        self.lastPos = PyQt6.QtCore.QPointF(0, 0)
 
     def initUI(self):
 
@@ -29,26 +30,26 @@ class Example(QWidget):
         self.drawPoints(qp)
         qp.setPen(QPen(Qt.GlobalColor.red, 8))
         qp.end()
+
+
     def mousePressEvent(self, e):
         self.lastPos = e.position()
-    def mouseMoveEvent(self, e):
-        
-        if e.button()==Qt.LeftButton:
-            self.dots.append((e.position().x(), e.position().y()))
-        if e.button()==Qt.MiddleButton:
-            offset = (e.position().x()-self.lastPos.x(), e.position().y()-self.lastPos.y())
-            self.dots = list(map(lambda t: (t[0]+offset[0], t[1]+offset[1]), dots))
-        self.update()
+        self.lastButton = e.button()
 
-    def mouseReleaseEvent(self, e):
-        self.paintEvent(e)
+    def mouseMoveEvent(self, e):
+        if self.lastButton == Qt.MouseButton.LeftButton:
+            self.dots.append((e.position().x(), e.position().y()))
+        if self.lastButton == Qt.MouseButton.MiddleButton:
+            offset = (e.position().x()-self.lastPos.x(), e.position().y()-self.lastPos.y())
+            self.dots = list(map(lambda t: (t[0]+offset[0], t[1]+offset[1]), self.dots))
+
+        self.lastPos = e.position()
+        self.update()
 
     def drawPoints(self, qp):
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
-        size = self.size()
-
         for d in self.dots:
-            qp.drawEllipse(d[0], d[1], 3,3)
+            qp.drawEllipse(d[0], d[1], 3, 3)
 
 
 

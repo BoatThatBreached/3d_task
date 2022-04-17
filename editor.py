@@ -1,7 +1,7 @@
 #print('this is the editor')
 import random
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
 
@@ -24,23 +24,20 @@ class Example(QWidget):
 
 
     def paintEvent(self, e):
-
         qp = QPainter()
         qp.begin(self)
         self.drawPoints(qp)
         qp.setPen(QPen(Qt.GlobalColor.red, 8))
-        #qp.drawEllipse(100, 100, 50, 60)
         qp.end()
         
     def mouseMoveEvent(self, e):
-        self.dots.append((int(e.position().x()), int(e.position().y())))
-        self.paintEvent(e)
+        self.dots.append((e.position().x(), e.position().y()))
+        self.update()
+
     def mouseReleaseEvent(self, e):
         self.paintEvent(e)
-        
 
     def drawPoints(self, qp):
-
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
         size = self.size()
 

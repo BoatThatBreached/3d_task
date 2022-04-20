@@ -57,29 +57,30 @@ class Plane:
         self.basis = (p2, p3) if relatively else (p2 - p1, p3 - p1)
         self.size = (np.linalg.norm(self.basis[0]), np.linalg.norm(self.basis[1]))
 
-    def projectPoint(self, p):
+    def project_point(self, p):
         res = getProjection(p - self.anchor, self.basis[0]) * self.basis[0]
         res += getProjection(p - self.anchor, self.basis[1]) * self.basis[1]
         res += self.anchor
         return res
 
-    def getCoords(self, p):
+    def get_coords(self, p):
         return getProjection(p - self.anchor, self.basis[0]), getProjection(p - self.anchor, self.basis[1])
 
     def contains(self, p):
-        coords = self.getCoords(p)
+        coords = self.get_coords(p)
         return 0 <= coords[0] <= 1 and 0 <= coords[1] <= 1
 
-    def intersectLine(self, line):
+    def intersect_line(self, line):
         p1 = line.anchor
         p2 = line.anchor + line.direction
 
-        pr1 = self.projectPoint(p1)
-        pr2 = self.projectPoint(p2)
+        pr1 = self.project_point(p1)
+        pr2 = self.project_point(p2)
 
         h1 = p1 - pr1
         h2 = p2 - pr2
-
+        if np.linalg.norm(h1)<1e-7 or np.linalg.norm(h2)<1e-7:
+            return line
         r = np.linalg.norm(h1) / np.linalg.norm(h2)
         if r + 1 < 1e-7:
             return None

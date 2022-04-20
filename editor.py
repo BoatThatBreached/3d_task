@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt6.QtCore import Qt, QPointF, QLineF
+from PyQt6.QtCore import Qt, QPointF, QLineF, QRectF
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
 import geom as g
@@ -180,8 +180,8 @@ class Editor(QWidget):
             alpha = delta.x()/360
             beta = delta.y()/360
             
-            self.up = g.turnAroundX(beta, self)
-            self.right = g.turnAroundY(alpha, self)
+            self.up = g.turnAroundX(beta, self.up)
+            self.right = g.turnAroundY(alpha, self.right)
             
         if self.lastButton==Qt.MouseButton.MiddleButton:
             self.center+=e.position()-self.lastPos
@@ -211,9 +211,121 @@ class Editor(QWidget):
             qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
             qp.drawLine(QLineF(self.center+p1, self.center+p2))
             
+class IsometricEditor(QWidget):
+    def __init__(self):
+        self.initFigures()
+        self.corner = QPointF(0, 480)
+        self.origin = np.array([320,240,0])
+        self.screen = g.Plane(np.array([-320,-240,0])+self.origin, np.array([640,0,0]), np.array([0, 480, 0]), True)
+        self.camera = np.array([0.,0.,-30.])
+        self.scale = 1
+        self.chosenPoint = None
+        super().__init__()
         
+        self.initUI()
+        
+    def initUI(self):
+        self.setGeometry(200, 200, 640, 480)
+        self.setWindowTitle('Isometric 3D Editor')
+        self.show()
+    def initFigures(self):
+        self.points = []
+        def addP(x,y,z):
+            self.points.append(np.array([x,y,z]))
+        addP(-3, 0, -2)
+        addP(3, 0, -2)
+        addP(0, 5, -2)
+        addP(0, -1, 2)
+
+        self.connections = []
+        def connect(p1, p2):
+            self.connections.append((p1, p2))
+        connect(0,1)
+        connect(0,2)
+        connect(0,3)
+        connect(1,2)
+        connect(1,3)
+        connect(2,3)
+        self.connectLines()
+    def connectLines(self):
+        self.lines = []
+        for t in self.connections:
+            self.lines.append((self.points[t[0]], self.points[t[1]]))
+    def paintEvent(self, e):
+        qp = QPainter()
+        qp.begin(self)
+        self.drawLines(qp)
+        self.drawPoints(qp)
+        qp.end()
+    def wheelEvent(self, e):
+        self.scale+=e.angleDelta().y()/200
+        self.update()
+    def mousePressEvent(self, e):
+        self.lastPos = e.position()
+        self.lastButton = e.button()
+        pos = np.array([e.position().x(), self.corner.y()-e.position().y(), 0])
+
+        if self.lastButton == Qt.MouseButton.RightButton:
+            for p in self.points:
+                line = g.Line(self.camera+self.origin, p+self.origin)
+                I= self.screen.intersectLine(line)
+                if type(I)== type(None):
+                    continue
+                I = (I-self.origin)*self.scale+self.origin
+                I[2]=0
+                if np.linalg.norm(pos-I)<4:
+                    self.chosenPoint = p
+                    break
+        self.update()
+    def mouseMoveEvent(self, e):
+        delta=e.position()-self.lastPos
+        if self.lastButton==Qt.MouseButton.LeftButton:
+            alpha = -delta.y()/200
+            beta = delta.x()/200
+            for i in range(len(self.points)):
+                self.points[i] = g.turnAroundX(alpha, g.turnAroundY(beta, self.points[i]))
+            self.connectLines()
+            
+        if self.lastButton==Qt.MouseButton.MiddleButton:
+            pass
+        self.lastPos = e.position()
+        self.update()
+    def drawPoints(self, qp):
+        
+        for p in self.points:
+            qp.setPen(QPen(Qt.GlobalColor.blue, 2))
+            line = g.Line(self.camera+self.origin, p+self.origin)
+            I= self.screen.intersectLine(line)
+            if type(I)== type(None):
+                continue
+            I = (I-self.origin)*self.scale+self.origin
+            qpoint = QPointF(I[0], self.corner.y()-I[1])
+            
+            #if type(self.chosenPoint)!=type(None) and np.linalg.norm(p-self.chosenPoint)<2:
+                #qp.setPen(QPen(Qt.GlobalColor.red, 2))
+            qp.drawEllipse(qpoint, 3,3)
+        
+    def drawLines(self, qp):
+        qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
+        for t in self.lines:
+            line1 = g.Line(self.camera+self.origin, t[0]+self.origin)
+            line2 = g.Line(self.camera+self.origin, t[1]+self.origin)
+            I1 = self.screen.intersectLine(line1)
+            if type(I1)== type(None):
+                continue
+            I2 = self.screen.intersectLine(line2)
+            if type(I2)== type(None):
+                continue
+            I1 = (I1-self.origin)*self.scale+self.origin
+            I2 = (I2-self.origin)*self.scale+self.origin
+            qpoint1 = QPointF(I1[0], self.corner.y()-I1[1])
+            qpoint2 = QPointF(I2[0], self.corner.y()-I2[1])
+            qp.drawLine(QLineF(qpoint1, qpoint2))
+            
 if __name__ == "__main__":
     app = QApplication([])
     #ex = Example()
-    ex2 = Editor()
+    #ex2 = Editor()
+    ex3 = IsometricEditor()
     app.exec()
+                                                                                                                                                          

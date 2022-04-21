@@ -26,6 +26,8 @@ def translatePoint(p, editor):
 
 def turnAroundX(beta, vector):
     length = np.linalg.norm(vector)
+    if length < 1e-7:
+        return vector
     cos_a = vector[1] / length
     cos_b = np.cos(beta)
     sin_a = vector[2] / length
@@ -37,6 +39,8 @@ def turnAroundX(beta, vector):
 
 def turnAroundY(alpha, vector):
     length = np.linalg.norm(vector)
+    if length < 1e-7:
+        return vector
     cos_a = vector[0] / length
     cos_b = np.cos(alpha)
     sin_a = vector[2] / length

@@ -19,7 +19,7 @@ class IsometricEditor(QWidget):
         self.camera = np.array([0., 0., 30.])
         self.scale = 30
         self.intensity = 200
-        self.chosenPoint = None
+        self.chosenPointIndex = -1
         self.lastPos = None
         self.lastButton = None
 
@@ -34,29 +34,23 @@ class IsometricEditor(QWidget):
         self.setWindowTitle('Isometric 3D Editor')
         self.show()
 
+    def connect(self, p1, p2):
+        self.connections.append((p1, p2))
+
+    def add_p(self, x, y, z):
+        self.points.append(np.array([x, y, z]))
+
     def init_figures(self):
         self.points = []
-
-        def add_p(x, y, z):
-            self.points.append(np.array([x, y, z]))
-
-        add_p(-3., 0., -2.)
-        add_p(3., 0., -2.)
-        add_p(0., 5., -2.)
-        add_p(0., -1., 2.)
-        add_p(3., 4., 0.03)
-
+        self.add_p(1, 1, 1)
+        self.add_p(-1, 1, 1)
+        self.add_p(1, -1, 1)
+        self.add_p(1, 1, -1)
+        self.add_p(-1, -1, 1)
+        self.add_p(1, -1, -1)
+        self.add_p(-1, 1, -1)
+        self.add_p(-1, -1, -1)
         self.connections = []
-
-        def connect(p1, p2):
-            self.connections.append((p1, p2))
-
-        connect(0, 1)
-        connect(0, 2)
-        connect(0, 3)
-        connect(1, 2)
-        connect(1, 3)
-        connect(2, 3)
         self.reconnect_lines()
 
     def reconnect_lines(self):
@@ -83,15 +77,21 @@ class IsometricEditor(QWidget):
         pos = np.array([e.position().x(), self.corner.y() - e.position().y(), 0])
 
         if self.lastButton == Qt.MouseButton.RightButton:
-            for p in self.points:
+            for k in range(len(self.points)):
+                p = self.points[k]
                 line = g.Line(self.camera + self.origin, p + self.origin)
                 i = self.screen.intersect_line(line)
                 if i is None:
                     continue
+                if type(i) == g.Line:
+                    i = i.anchor
                 i = (i - self.origin) * self.scale + self.origin
                 i[2] = 0
                 if np.linalg.norm(pos - i) < 4:
-                    self.chosenPoint = p
+                    if self.chosenPointIndex >= 0:
+                        self.connect(self.chosenPointIndex, k)
+                        self.reconnect_lines()
+                    self.chosenPointIndex = k
                     break
 
         self.update()
@@ -145,17 +145,20 @@ class IsometricEditor(QWidget):
             qp.drawEllipse(point1, 3,3)
 
     def draw_points(self, qp):
-        for p in self.points:
+        for k in range(len(self.points)):
+            p = self.points[k]
             qp.setPen(QPen(Qt.GlobalColor.blue, 2))
             line = g.Line(self.camera + self.origin, p + self.origin)
             i = self.screen.intersect_line(line)
             if i is None:
                 continue
+            if type(i) == g.Line:
+                i = i.anchor
             i = (i - self.origin) * self.scale + self.origin
             point = QPointF(i[0], self.corner.y() - i[1])
-
-            # if type(self.chosenPoint)!=type(None) and np.linalg.norm(p-self.chosenPoint)<2:
-            # qp.setPen(QPen(Qt.GlobalColor.red, 2))
+            print(self.chosenPointIndex)
+            if self.chosenPointIndex == k:
+                qp.setPen(QPen(Qt.GlobalColor.red, 2))
             qp.drawEllipse(point, 3, 3)
 
     def draw_lines(self, qp):

@@ -79,6 +79,7 @@ class Plane:
 
         h1 = p1 - pr1
         h2 = p2 - pr2
+        #TODO:вынеcти в другой метод, решить проблему с добавлением точки на xy
         if np.linalg.norm(h1)<1e-7 or np.linalg.norm(h2)<1e-7:
             return line
         r = np.linalg.norm(h1) / np.linalg.norm(h2)

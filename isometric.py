@@ -44,6 +44,7 @@ class IsometricEditor(QWidget):
         add_p(3., 0., -2.)
         add_p(0., 5., -2.)
         add_p(0., -1., 2.)
+        add_p(3., 4., 0.03)
 
         self.connections = []
 
@@ -92,6 +93,7 @@ class IsometricEditor(QWidget):
                 if np.linalg.norm(pos - i) < 4:
                     self.chosenPoint = p
                     break
+
         self.update()
 
     def mouseReleaseEvent(self, e):
@@ -108,7 +110,8 @@ class IsometricEditor(QWidget):
                 self.axis[i] = g.turnAroundX(alpha, g.turnAroundY(beta, self.axis[i]))
 
         if self.lastButton == Qt.MouseButton.MiddleButton:
-            pass
+            self.origin[0] += delta.x()
+            self.origin[1] -= delta.y()
 
         self.lastPos = e.position()
         self.reconnect_lines()

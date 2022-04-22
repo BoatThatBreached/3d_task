@@ -94,7 +94,7 @@ class IsometricEditor(QWidget):
                 i[2] = 0
                 if g.length(pos - i) < 4:
                     if self.chosenPointIndex >= 0:
-                        self.connect(self.chosenPointIndex, k)
+                        self.connect(self.chosenPointIndex, k, "line")
                     self.chosenPointIndex = k
                     break
 

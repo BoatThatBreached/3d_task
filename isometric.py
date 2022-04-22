@@ -81,8 +81,8 @@ class IsometricEditor(QWidget):
 
         if self.lastButton == Qt.MouseButton.RightButton:
             for k in range(len(self.points)):
-                p = self.points[k]
-                p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, p))
+                p = self.get_coordinates(self.points[k])
+
                 line = g.Line(self.camera + self.origin, p + self.origin)
                 i = self.screen.intersect_line(line)
                 if i is None:
@@ -125,7 +125,7 @@ class IsometricEditor(QWidget):
         colors = [Qt.GlobalColor.red, Qt.GlobalColor.blue, Qt.GlobalColor.green]
         for i in range(len(self.axis)):
             qp.setPen(QPen(colors[i], 2))
-            p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, self.axis[i]))
+            p = self.get_coordinates(self.axis[i])
             line1 = g.Line(p + self.origin, self.origin)
             line2 = g.Line(self.origin, self.origin)
             i1 = self.screen.intersect_line(line1)
@@ -147,8 +147,7 @@ class IsometricEditor(QWidget):
 
     def draw_points(self, qp):
         for k in range(len(self.points)):
-            p = self.points[k]
-            p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, p))
+            p = self.get_coordinates(self.points[k])
             qp.setPen(QPen(Qt.GlobalColor.blue, 2))
             line = g.Line(self.camera + self.origin, p + self.origin)
             i = self.screen.intersect_line(line)
@@ -166,12 +165,16 @@ class IsometricEditor(QWidget):
     def draw_lines(self, qp):
         qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
         for t in self.lines:
-            line1 = g.Line(self.camera + self.origin, g.turnAroundX(self.alpha, g.turnAroundY(self.beta, t[0])) + self.origin)
-            line2 = g.Line(self.camera + self.origin, g.turnAroundX(self.alpha, g.turnAroundY(self.beta, t[1])) + self.origin)
+            line1 = g.Line(self.camera + self.origin, self.get_coordinates(t[0]) + self.origin)
+            line2 = g.Line(self.camera + self.origin, self.get_coordinates(t[1]) + self.origin)
             i1 = self.screen.intersect_line(line1)
+            if type(i1) is g.Line:
+                i1 = i1.anchor
             if i1 is None:
                 continue
             i2 = self.screen.intersect_line(line2)
+            if type(i2) is g.Line:
+                i2 = i2.anchor
             if i2 is None:
                 continue
             i1 = (i1 - self.origin) * self.scale + self.origin
@@ -179,3 +182,7 @@ class IsometricEditor(QWidget):
             point1 = QPointF(i1[0], self.corner.y() - i1[1])
             point2 = QPointF(i2[0], self.corner.y() - i2[1])
             qp.drawLine(QLineF(point1, point2))
+
+    def get_coordinates(self, point):
+        return g.turnAroundX(self.alpha, g.turnAroundY(self.beta, point))
+

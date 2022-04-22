@@ -38,9 +38,18 @@ def turn_around(axis, angle, vector):
     sin_b = np.sin(angle)
     cos_ab = cos_a * cos_b - sin_a * sin_b
     sin_ab = sin_a * cos_b + sin_b * cos_a
-    result = [curr_length*cos_ab, curr_length*sin_ab]
+    result = [curr_length * cos_ab, curr_length * sin_ab]
     result.insert('xyz'.index(axis), vector['xyz'.index(axis)])
     return np.array(result)
+
+
+def turn_queue(axis, angles, vector):
+    if len(axis)!=len(angles):
+        raise Exception("Wrong number of axis ({0}) and angles ({1})".format(len(axis), len(angles)))
+    result = np.copy(vector)
+    for i in range(len(axis)):
+        result = turn_around(axis[i], angles[i], result)
+    return result
 
 
 def clamp(val, mi, ma):
@@ -48,7 +57,7 @@ def clamp(val, mi, ma):
 
 
 def get_coordinates(point, around_x, around_y):
-    return turn_around('x', around_x, turn_around('y', around_y, point))
+    return turn_queue('xy', (around_x, around_y), point)
 
 
 def length(vector):
@@ -101,19 +110,19 @@ class Plane:
 
 
 class LineContainer:
-    def __init__(self, ind1, ind2, draw_mode):
+    def __init__(self, p1, p2, draw_mode):
         if draw_mode not in ("segment", "line"):
-            raise Exception("wrong mode!")
-        self.p1 = ind1
-        self.p2 = ind2
+            raise Exception("Wrong draw mode: {0}".format(draw_mode))
+        self.p1 = p1
+        self.p2 = p2
         self.draw_mode = draw_mode
 
-    def get_line(self, points):
-        return Line(points[self.p1], points[self.p2])
+    def get_line(self):
+        return Line(self.p1, self.p2)
 
-    def project_on_plane(self, points, plane, camera, origin, around_x, around_y):
-        line1 = Line(camera, get_coordinates(points[self.p1], around_x, around_y)) + origin
-        line2 = Line(camera, get_coordinates(points[self.p2], around_x, around_y)) + origin
+    def project_on_plane(self, plane, camera, origin, around_x, around_y):
+        line1 = Line(camera, get_coordinates(self.p1, around_x, around_y)) + origin
+        line2 = Line(camera, get_coordinates(self.p2, around_x, around_y)) + origin
         i1 = plane.intersect_line(line1)
         if type(i1) is Line:
             i1 = i1.anchor
@@ -123,10 +132,42 @@ class LineContainer:
         return i1, i2
 
 
+class PlaneContainer:
+    def __init__(self, anchor, p1, p2, draw_mode):
+        self.anchor = anchor
+        self.p1 = p1
+        self.p2 = p2
+        if draw_mode not in ("triangle", "para", "plane"):
+            raise Exception("Wrong draw mode: {0}".format(draw_mode))
+        self.draw_mode = draw_mode
+        self.points = set()
+        self.line_containers = set()
+        self.density = 10
+        self.reset_grid()
+
+    def reset_grid(self):
+        self.line_containers.clear()
+        basis_x = self.p1 - self.anchor
+        basis_y = self.p2 - self.anchor
+        if self.draw_mode == "triangle":
+            for i in range(self.density):
+                p1 = self.anchor + basis_y * i / (self.density-1)
+                p2 = self.anchor + basis_y * i / (self.density-1) + basis_x * (self.density-1 - i) / (self.density-1)
+                self.line_containers.add(LineContainer(p1, p2, "segment"))
+        if self.draw_mode == "para":
+            for i in range(self.density):
+                p1 = self.anchor + basis_y * i / (self.density-1)
+                p2 = self.anchor + basis_y * i / (self.density-1) + basis_x
+                self.line_containers.add(LineContainer(p1, p2, "segment"))
+
+    def normal(self):
+        return np.cross(self.p1 - self.anchor, self.p2 - self.anchor)
+
+
 class Line:
     def __init__(self, p1, p2):
         self.anchor = p1
         self.direction = p2 - p1
 
     def __add__(self, other):
-        return Line(self.anchor+other, self.direction+other)
+        return Line(self.anchor + other, self.direction + other)

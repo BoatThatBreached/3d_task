@@ -33,7 +33,7 @@ class PointCreationWidget(QVBoxLayout):
         x = float(self.input.x.text())
         y = float(self.input.y.text())
         z = float(self.input.z.text())
-        mainWindow.editor.add_p(x, y, z)
+        mainWindow.editor.add_point(x, y, z)
         mainWindow.editor.update()
 
 

@@ -14,6 +14,9 @@ class IsometricEditor(QWidget):
         self.init_figures()
         self.corner = QPointF(0, 480)
         self.origin = np.array([320, 240, 0])
+        self.alpha = 0
+        self.beta = 0
+        self.current_point = self.origin
         self.screen = g.Plane(np.array([-320, -240, 0]) + self.origin, np.array([640, 0, 0]), np.array([0, 480, 0]),
                               True)
         self.camera = np.array([0., 0., 30.])
@@ -79,6 +82,7 @@ class IsometricEditor(QWidget):
         if self.lastButton == Qt.MouseButton.RightButton:
             for k in range(len(self.points)):
                 p = self.points[k]
+                p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, p))
                 line = g.Line(self.camera + self.origin, p + self.origin)
                 i = self.screen.intersect_line(line)
                 if i is None:
@@ -102,12 +106,8 @@ class IsometricEditor(QWidget):
     def mouseMoveEvent(self, e):
         delta = e.position() - self.lastPos
         if self.lastButton == Qt.MouseButton.LeftButton:
-            alpha = -delta.y() / self.intensity
-            beta = delta.x() / self.intensity
-            for i in range(len(self.points)):
-                self.points[i] = g.turnAroundX(alpha, g.turnAroundY(beta, self.points[i]))
-            for i in range(len(self.axis)):
-                self.axis[i] = g.turnAroundX(alpha, g.turnAroundY(beta, self.axis[i]))
+            self.alpha += -delta.y() / self.intensity
+            self.beta += delta.x() / self.intensity
 
         if self.lastButton == Qt.MouseButton.MiddleButton:
             self.origin[0] += delta.x()
@@ -125,7 +125,8 @@ class IsometricEditor(QWidget):
         colors = [Qt.GlobalColor.red, Qt.GlobalColor.blue, Qt.GlobalColor.green]
         for i in range(len(self.axis)):
             qp.setPen(QPen(colors[i], 2))
-            line1 = g.Line(self.axis[i] + self.origin, self.origin)
+            p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, self.axis[i]))
+            line1 = g.Line(p + self.origin, self.origin)
             line2 = g.Line(self.origin, self.origin)
             i1 = self.screen.intersect_line(line1)
             if type(i1) is g.Line:
@@ -147,6 +148,7 @@ class IsometricEditor(QWidget):
     def draw_points(self, qp):
         for k in range(len(self.points)):
             p = self.points[k]
+            p = g.turnAroundX(self.alpha, g.turnAroundY(self.beta, p))
             qp.setPen(QPen(Qt.GlobalColor.blue, 2))
             line = g.Line(self.camera + self.origin, p + self.origin)
             i = self.screen.intersect_line(line)
@@ -164,8 +166,8 @@ class IsometricEditor(QWidget):
     def draw_lines(self, qp):
         qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
         for t in self.lines:
-            line1 = g.Line(self.camera + self.origin, t[0] + self.origin)
-            line2 = g.Line(self.camera + self.origin, t[1] + self.origin)
+            line1 = g.Line(self.camera + self.origin, g.turnAroundX(self.alpha, g.turnAroundY(self.beta, t[0])) + self.origin)
+            line2 = g.Line(self.camera + self.origin, g.turnAroundX(self.alpha, g.turnAroundY(self.beta, t[1])) + self.origin)
             i1 = self.screen.intersect_line(line1)
             if i1 is None:
                 continue

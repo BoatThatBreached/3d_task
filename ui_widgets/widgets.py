@@ -16,7 +16,6 @@ class AddPointWidget(QWidget):
         self.setFixedHeight(200)
 
 
-
 class PointCreationWidget(QVBoxLayout):
     def __init__(self, mainWindow):
         super().__init__()
@@ -25,12 +24,12 @@ class PointCreationWidget(QVBoxLayout):
         self.input = CoordinatesInput()
         self.addButton = QPushButton()
         self.addButton.setText("Add Point")
-        self.addButton.clicked.connect(lambda s: self.AddPoint(s, mainWindow))
+        self.addButton.clicked.connect(lambda s: self.add_point(s, mainWindow))
 
         self.addLayout(self.input)
         self.addWidget(self.addButton)
 
-    def AddPoint(self, s, mainWindow):
+    def add_point(self, s, mainWindow):
         x = float(self.input.x.text())
         y = float(self.input.y.text())
         z = float(self.input.z.text())
@@ -44,17 +43,16 @@ class CoordinatesInput(QHBoxLayout):
 
         validator = QDoubleValidator(self)
 
-        self.x = QLineEdit()
-        self.x.setValidator(validator)
-        self.x.setText("1")
-        self.y = QLineEdit()
-        self.y.setValidator(validator)
-        self.y.setText("1")
-        self.z = QLineEdit()
-        self.z.setValidator(validator)
-        self.z.setText("1")
+        def get_line_edit():
+            t = QLineEdit()
+            t.setValidator(validator)
+            t.setText("1")
+            return t
+
+        self.x = get_line_edit()
+        self.y = get_line_edit()
+        self.z = get_line_edit()
 
         self.addWidget(self.x)
         self.addWidget(self.y)
         self.addWidget(self.z)
-

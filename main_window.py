@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         #self.layout.addWidget(self.widgets.pointAddWindow)
 
         #self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.editor = IsometricEditor()
+        self.editor = IsometricEditor("black")
         self.editor.setLayout(self.layout)
 
         toolbar = ToolBar("My main toolbar", self)

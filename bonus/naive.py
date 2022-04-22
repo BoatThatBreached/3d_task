@@ -72,8 +72,8 @@ class Editor(QWidget):
             alpha = delta.x() / 360
             beta = delta.y() / 360
 
-            self.up = g.turnAroundX(beta, self.up)
-            self.right = g.turnAroundY(alpha, self.right)
+            self.up = g.turn_around_x(beta, self.up)
+            self.right = g.turn_around_y(alpha, self.right)
 
         if self.lastButton == Qt.MouseButton.MiddleButton:
             self.center += e.position() - self.lastPos
@@ -85,7 +85,7 @@ class Editor(QWidget):
         cols = [Qt.GlobalColor.red, Qt.GlobalColor.yellow, Qt.GlobalColor.green]
 
         for a in self.axis:
-            p = g.translatePoint(a, self)
+            p = g.translate_point(a, self)
             qp.setPen(QPen(cols[0], 2))
             line = QLineF(self.center, self.center + p)
             qp.drawLine(line)
@@ -93,13 +93,13 @@ class Editor(QWidget):
 
     def drawPoints(self, qp):
         for p in self.points:
-            p = g.translatePoint(p, self)
+            p = g.translate_point(p, self)
             qp.setPen(QPen(Qt.GlobalColor.blue, 2))
             qp.drawEllipse(self.center + p, 3, 3)
 
     def drawLines(self, qp):
         for t in self.lines:
-            p1 = g.translatePoint(t[0], self)
-            p2 = g.translatePoint(t[1], self)
+            p1 = g.translate_point(t[0], self)
+            p2 = g.translate_point(t[1], self)
             qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
             qp.drawLine(QLineF(self.center + p1, self.center + p2))

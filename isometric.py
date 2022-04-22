@@ -1,5 +1,5 @@
 import numpy as np
-from PyQt6.QtCore import Qt, QPointF, QLineF, QRectF
+from PyQt6.QtCore import Qt, QPointF, QLineF
 from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 import geom as g
@@ -8,18 +8,19 @@ import geom as g
 class IsometricEditor(QWidget):
     def __init__(self, theme="black"):
         self.theme = theme
-        self.lines = []
-        self.connections = []
         self.points = []
+        self.containers = []
         self.init_figures()
         self.corner = QPointF(0, 480)
         self.origin = np.array([320, 240, 0])
-        self.alpha = 0
-        self.beta = 0
+        self.around_x = 0
+        self.around_y = 0
         self.current_point = self.origin
-        self.screen = g.Plane(np.array([-320, -240, 0]) + self.origin, np.array([640, 0, 0]), np.array([0, 480, 0]),
+        self.screen = g.Plane(np.array([-320, -240, -1000]) + self.origin,
+                              np.array([640, 0, 0]),
+                              np.array([0, 480, 0]),
                               True)
-        self.camera = np.array([0., 0., 30.])
+        self.camera = np.array([0., 0., -80.])
         self.scale = 30
         self.intensity = 200
         self.chosenPointIndex = -1
@@ -32,34 +33,34 @@ class IsometricEditor(QWidget):
 
         self.init_ui()
 
+    def geometry_safe_args(self):
+        return self.points, self.screen, self.camera, self.origin, self.around_x, self.around_y
+
     def init_ui(self):
         self.setGeometry(200, 200, 640, 480)
         self.setWindowTitle('Isometric 3D Editor')
         self.show()
 
-    def connect(self, p1, p2):
-        self.connections.append((p1, p2))
+    def connect(self, p1, p2, draw_mode):
+        self.containers.append(g.LineContainer(p1, p2, draw_mode))
 
     def add_p(self, x, y, z):
         self.points.append(np.array([x, y, z]))
 
+    def init_square(self, radius, center=np.array([0, 0, 0])):
+        for i in range(8):
+            b = bin(i)[2:].zfill(3)
+            x, y, z = map(lambda n: radius if n == '1' else -radius, b)
+            x += center[0]
+            y += center[1]
+            z += center[2]
+            self.add_p(x, y, z)
+
     def init_figures(self):
         self.points = []
-        self.add_p(1, 1, 1)
-        self.add_p(-1, 1, 1)
-        self.add_p(1, -1, 1)
-        self.add_p(1, 1, -1)
-        self.add_p(-1, -1, 1)
-        self.add_p(1, -1, -1)
-        self.add_p(-1, 1, -1)
-        self.add_p(-1, -1, -1)
-        self.connections = []
-        self.reconnect_lines()
-
-    def reconnect_lines(self):
-        self.lines = []
-        for t in self.connections:
-            self.lines.append((self.points[t[0]], self.points[t[1]]))
+        self.init_square(2)
+        self.connect(1, 7, "line")
+        self.connect(2, 3, "segment")
 
     def paintEvent(self, e):
         qp = QPainter()
@@ -81,7 +82,7 @@ class IsometricEditor(QWidget):
 
         if self.lastButton == Qt.MouseButton.RightButton:
             for k in range(len(self.points)):
-                p = self.get_coordinates(self.points[k])
+                p = g.get_coordinates(self.points[k], self.around_x, self.around_y)
 
                 line = g.Line(self.camera + self.origin, p + self.origin)
                 i = self.screen.intersect_line(line)
@@ -91,10 +92,9 @@ class IsometricEditor(QWidget):
                     i = i.anchor
                 i = (i - self.origin) * self.scale + self.origin
                 i[2] = 0
-                if np.linalg.norm(pos - i) < 4:
+                if g.length(pos - i) < 4:
                     if self.chosenPointIndex >= 0:
                         self.connect(self.chosenPointIndex, k)
-                        self.reconnect_lines()
                     self.chosenPointIndex = k
                     break
 
@@ -106,26 +106,25 @@ class IsometricEditor(QWidget):
     def mouseMoveEvent(self, e):
         delta = e.position() - self.lastPos
         if self.lastButton == Qt.MouseButton.LeftButton:
-            self.alpha += -delta.y() / self.intensity
-            self.beta += delta.x() / self.intensity
+            self.around_x += -delta.y() / self.intensity
+            self.around_y += delta.x() / self.intensity
 
         if self.lastButton == Qt.MouseButton.MiddleButton:
             self.origin[0] += delta.x()
             self.origin[1] -= delta.y()
 
         self.lastPos = e.position()
-        self.reconnect_lines()
         self.update()
 
     def draw_background(self, qp):
         if self.theme == "black":
-            qp.fillRect(0,0,self.size().width().real, self.size().height().real, Qt.GlobalColor.black)
+            qp.fillRect(0, 0, self.size().width().real, self.size().height().real, Qt.GlobalColor.black)
 
     def draw_axis(self, qp):
         colors = [Qt.GlobalColor.red, Qt.GlobalColor.blue, Qt.GlobalColor.green]
         for i in range(len(self.axis)):
             qp.setPen(QPen(colors[i], 2))
-            p = self.get_coordinates(self.axis[i])
+            p = g.get_coordinates(self.axis[i], self.around_x, self.around_y)
             line1 = g.Line(p + self.origin, self.origin)
             line2 = g.Line(self.origin, self.origin)
             i1 = self.screen.intersect_line(line1)
@@ -143,11 +142,11 @@ class IsometricEditor(QWidget):
             point1 = QPointF(i1[0], self.corner.y() - i1[1])
             point2 = QPointF(i2[0], self.corner.y() - i2[1])
             qp.drawLine(QLineF(point1, point2))
-            qp.drawEllipse(point1, 3,3)
+            qp.drawEllipse(point1, 3, 3)
 
     def draw_points(self, qp):
         for k in range(len(self.points)):
-            p = self.get_coordinates(self.points[k])
+            p = g.get_coordinates(self.points[k], self.around_x, self.around_y)
             qp.setPen(QPen(Qt.GlobalColor.blue, 2))
             line = g.Line(self.camera + self.origin, p + self.origin)
             i = self.screen.intersect_line(line)
@@ -157,32 +156,25 @@ class IsometricEditor(QWidget):
                 i = i.anchor
             i = (i - self.origin) * self.scale + self.origin
             point = QPointF(i[0], self.corner.y() - i[1])
-            print(self.chosenPointIndex)
             if self.chosenPointIndex == k:
                 qp.setPen(QPen(Qt.GlobalColor.red, 2))
             qp.drawEllipse(point, 3, 3)
 
     def draw_lines(self, qp):
-        qp.setPen(QPen(Qt.GlobalColor.cyan, 2))
-        for t in self.lines:
-            line1 = g.Line(self.camera + self.origin, self.get_coordinates(t[0]) + self.origin)
-            line2 = g.Line(self.camera + self.origin, self.get_coordinates(t[1]) + self.origin)
-            i1 = self.screen.intersect_line(line1)
-            if type(i1) is g.Line:
-                i1 = i1.anchor
-            if i1 is None:
+
+        for container in self.containers:
+            i1, i2 = container.project_on_plane(*self.geometry_safe_args())
+            if i1 is None or i2 is None:
                 continue
-            i2 = self.screen.intersect_line(line2)
-            if type(i2) is g.Line:
-                i2 = i2.anchor
-            if i2 is None:
-                continue
+            qp.setPen(QPen(Qt.GlobalColor.cyan, 2 if container.draw_mode == "segment" else 1))
+            if container.draw_mode == "line":
+                if g.length(i1[:2] - i2[:2]) < 1e-1:
+                    continue
+                direction = g.get_vector_with_length(i1 - i2, 1)
+                i1 -= direction * 1000
+                i2 += direction * 1000
             i1 = (i1 - self.origin) * self.scale + self.origin
             i2 = (i2 - self.origin) * self.scale + self.origin
             point1 = QPointF(i1[0], self.corner.y() - i1[1])
             point2 = QPointF(i2[0], self.corner.y() - i2[1])
             qp.drawLine(QLineF(point1, point2))
-
-    def get_coordinates(self, point):
-        return g.turnAroundX(self.alpha, g.turnAroundY(self.beta, point))
-

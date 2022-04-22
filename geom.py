@@ -6,52 +6,53 @@ def dist(p1, p2):
     return ((p1.x() - p2.x()) ** 2 + (p1.y() - p2.y()) ** 2) ** 0.5
 
 
-def validPoint(point, size):
+def is_point_valid(point, size):
     return 0 <= point.x() <= size.width() and 0 <= point.y() <= size.height()
 
 
-def getProjection(a, b):
+def get_vector_on_vector_projection(a, b):
     return np.dot(a, b) / np.dot(b, b)
 
 
-def withLength(x, h):
-    return x / np.linalg.norm(x) * h
+def get_vector_with_length(x, h):
+    return x / length(x) * h
 
 
-def translatePoint(p, editor):
-    px = getProjection(p, withLength(editor.right, 1 / editor.width))
-    py = getProjection(p, withLength(editor.up, 1 / editor.width))
+def translate_point(p, editor):
+    px = get_vector_on_vector_projection(p, get_vector_with_length(editor.right, 1 / editor.width))
+    py = get_vector_on_vector_projection(p, get_vector_with_length(editor.up, 1 / editor.width))
     return QPointF(px, py)
 
 
-def turnAroundX(beta, vector):
-    length = np.linalg.norm(vector)
-    if length < 1e-7:
+def turn_around(axis, angle, vector):
+    if axis not in list('xyz'):
+        raise Exception("Wrong axis: {0}".format(axis))
+    curr_length = length(vector)
+    if curr_length < 1e-7:
         return vector
-    cos_a = vector[1] / length
-    cos_b = np.cos(beta)
-    sin_a = vector[2] / length
-    sin_b = np.sin(beta)
+    indices = list(range(3))
+    indices.pop('xyz'.index(axis))
+    cos_a = vector[indices[0]] / curr_length
+    cos_b = np.cos(angle)
+    sin_a = vector[indices[1]] / curr_length
+    sin_b = np.sin(angle)
     cos_ab = cos_a * cos_b - sin_a * sin_b
     sin_ab = sin_a * cos_b + sin_b * cos_a
-    return np.array([vector[0], length * cos_ab, length * sin_ab])
+    result = [curr_length*cos_ab, curr_length*sin_ab]
+    result.insert('xyz'.index(axis), vector['xyz'.index(axis)])
+    return np.array(result)
 
 
-def turnAroundY(alpha, vector):
-    length = np.linalg.norm(vector)
-    if length < 1e-7:
-        return vector
-    cos_a = vector[0] / length
-    cos_b = np.cos(alpha)
-    sin_a = vector[2] / length
-    sin_b = np.sin(alpha)
-    cos_ab = cos_a * cos_b - sin_a * sin_b
-    sin_ab = sin_a * cos_b + sin_b * cos_a
-    return np.array([length * cos_ab, vector[1], length * sin_ab])
+def clamp(val, mi, ma):
+    return ma if val > ma else mi if val < mi else val
 
 
-def clamp(val, m, M):
-    return M if val > M else m if val < m else val
+def get_coordinates(point, around_x, around_y):
+    return turn_around('x', around_x, turn_around('y', around_y, point))
+
+
+def length(vector):
+    return np.linalg.norm(vector)
 
 
 class Plane:
@@ -59,20 +60,21 @@ class Plane:
         self.anchor = p1
         # TODO: collinear check
         self.basis = (p2, p3) if relatively else (p2 - p1, p3 - p1)
-        self.size = (np.linalg.norm(self.basis[0]), np.linalg.norm(self.basis[1]))
+        self.size = (length(self.basis[0]), length(self.basis[1]))
 
     def project_point(self, p):
-        res = getProjection(p - self.anchor, self.basis[0]) * self.basis[0]
-        res += getProjection(p - self.anchor, self.basis[1]) * self.basis[1]
+        res = get_vector_on_vector_projection(p - self.anchor, self.basis[0]) * self.basis[0]
+        res += get_vector_on_vector_projection(p - self.anchor, self.basis[1]) * self.basis[1]
         res += self.anchor
         return res
 
-    def get_coords(self, p):
-        return getProjection(p - self.anchor, self.basis[0]), getProjection(p - self.anchor, self.basis[1])
+    def get_coordinates_on_plane(self, p):
+        return get_vector_on_vector_projection(p - self.anchor, self.basis[0]), \
+               get_vector_on_vector_projection(p - self.anchor, self.basis[1])
 
     def contains(self, p):
-        coords = self.get_coords(p)
-        return 0 <= coords[0] <= 1 and 0 <= coords[1] <= 1
+        coordinates = self.get_coordinates_on_plane(p)
+        return 0 <= coordinates[0] <= 1 and 0 <= coordinates[1] <= 1
 
     def intersect_line(self, line):
         p1 = line.anchor
@@ -83,10 +85,10 @@ class Plane:
 
         h1 = p1 - pr1
         h2 = p2 - pr2
-        #TODO:вынеcти в другой метод, решить проблему с добавлением точки на xy
-        if np.linalg.norm(h1)<1e-7 or np.linalg.norm(h2)<1e-7:
+        # TODO:вынеcти в другой метод, решить проблему с добавлением точки на xy
+        if length(h1) < 1e-7 or length(h2) < 1e-7:
             return line
-        r = np.linalg.norm(h1) / np.linalg.norm(h2)
+        r = length(h1) / length(h2)
         if r + 1 < 1e-7:
             return None
 
@@ -99,14 +101,32 @@ class Plane:
 
 
 class LineContainer:
-    def __init__(self, ind1, ind2, drawMode):
-        if drawMode not in ["sector", "line"]:
+    def __init__(self, ind1, ind2, draw_mode):
+        if draw_mode not in ("segment", "line"):
             raise Exception("wrong mode!")
-        self.points = (ind1, ind2)
-        self.drawMode = drawMode
+        self.p1 = ind1
+        self.p2 = ind2
+        self.draw_mode = draw_mode
+
+    def get_line(self, points):
+        return Line(points[self.p1], points[self.p2])
+
+    def project_on_plane(self, points, plane, camera, origin, around_x, around_y):
+        line1 = Line(camera, get_coordinates(points[self.p1], around_x, around_y)) + origin
+        line2 = Line(camera, get_coordinates(points[self.p2], around_x, around_y)) + origin
+        i1 = plane.intersect_line(line1)
+        if type(i1) is Line:
+            i1 = i1.anchor
+        i2 = plane.intersect_line(line2)
+        if type(i2) is Line:
+            i2 = i2.anchor
+        return i1, i2
 
 
 class Line:
     def __init__(self, p1, p2):
         self.anchor = p1
         self.direction = p2 - p1
+
+    def __add__(self, other):
+        return Line(self.anchor+other, self.direction+other)

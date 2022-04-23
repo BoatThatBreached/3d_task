@@ -73,9 +73,17 @@ class ToolBar(QToolBar):
     def __init__(self, name, mainWindow):
         super().__init__(name)
 
-        button_action = QAction(QIcon("icons/Point_Icon.svg"), "Add point", self)
-        button_action.setStatusTip("This is your button")
+        button_action = QAction(QIcon("icons/Point.svg"), "Add point", self)
+        self.addAction(button_action)
+        button_action = QAction(QIcon("icons/Plane.svg"), "Add point", self)
+        self.addAction(button_action)
+        button_action = QAction(QIcon("icons/Moving.svg"), "Add point", self)
+        self.addAction(button_action)
+        button_action = QAction(QIcon("icons/Rotation.svg"), "Add point", self)
+        self.addAction(button_action)
+        button_action = QAction(QIcon("icons/Segment.svg"), "Add point", self)
+        self.addAction(button_action)
+        #button_action.setStatusTip("This is your button")
         # button_action.triggered.connect(lambda s: self.onMyToolBarButtonClick(s, mainWindow))
 
-        self.setIconSize(QSize(20, 20))
-        self.addAction(button_action)
+        self.setIconSize(QSize(30, 30))

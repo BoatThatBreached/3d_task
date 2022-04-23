@@ -1,4 +1,5 @@
 from PyQt6.QtCore import QPointF
+from PyQt6.QtCore import Qt
 import numpy as np
 
 
@@ -10,11 +11,23 @@ def is_point_valid(point, size):
     return 0 <= point.x() <= size.width() and 0 <= point.y() <= size.height()
 
 
+def is_plane_valid(*points):
+    points = list(points)
+    for i in range(3):
+        pts = points[:]
+        pts.pop(i)
+        if length(pts[0] - pts[1]) < 1e-7:
+            return False
+    return True
+
+
 def get_vector_on_vector_projection(a, b):
     return np.dot(a, b) / np.dot(b, b)
 
 
 def get_vector_with_length(x, h):
+    if length(x) < 1e-7:
+        return x
     return x / length(x) * h
 
 
@@ -44,7 +57,7 @@ def turn_around(axis, angle, vector):
 
 
 def turn_queue(axis, angles, vector):
-    if len(axis)!=len(angles):
+    if len(axis) != len(angles):
         raise Exception("Wrong number of axis ({0}) and angles ({1})".format(len(axis), len(angles)))
     result = np.copy(vector)
     for i in range(len(axis)):
@@ -110,12 +123,13 @@ class Plane:
 
 
 class LineContainer:
-    def __init__(self, p1, p2, draw_mode):
+    def __init__(self, p1, p2, draw_mode, color=Qt.GlobalColor.cyan):
         if draw_mode not in ("segment", "line"):
             raise Exception("Wrong draw mode: {0}".format(draw_mode))
         self.p1 = p1
         self.p2 = p2
         self.draw_mode = draw_mode
+        self.color = color
 
     def get_line(self):
         return Line(self.p1, self.p2)
@@ -133,7 +147,7 @@ class LineContainer:
 
 
 class PlaneContainer:
-    def __init__(self, anchor, p1, p2, draw_mode):
+    def __init__(self, anchor, p1, p2, draw_mode, density=10):
         self.anchor = anchor
         self.p1 = p1
         self.p2 = p2
@@ -142,7 +156,7 @@ class PlaneContainer:
         self.draw_mode = draw_mode
         self.points = set()
         self.line_containers = set()
-        self.density = 10
+        self.density = density
         self.reset_grid()
 
     def reset_grid(self):
@@ -150,14 +164,26 @@ class PlaneContainer:
         basis_x = self.p1 - self.anchor
         basis_y = self.p2 - self.anchor
         if self.draw_mode == "triangle":
-            for i in range(self.density):
-                p1 = self.anchor + basis_y * i / (self.density-1)
-                p2 = self.anchor + basis_y * i / (self.density-1) + basis_x * (self.density-1 - i) / (self.density-1)
-                self.line_containers.add(LineContainer(p1, p2, "segment"))
+            for i in range(1, self.density):
+                p1 = self.anchor + basis_y * i / (self.density - 1)
+                p2 = self.anchor + basis_y * i / (self.density - 1) + basis_x * (self.density - 1 - i) / (
+                        self.density - 1)
+                self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
+            for i in range(1, self.density):
+                p1 = self.anchor + basis_x * i / (self.density - 1)
+                p2 = self.anchor + basis_x * i / (self.density - 1) + basis_y * (self.density - 1 - i) / (
+                        self.density - 1)
+                self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
+            self.line_containers.add(
+                LineContainer(self.anchor, self.anchor + basis_x, "segment", Qt.GlobalColor.magenta))
+            self.line_containers.add(
+                LineContainer(self.anchor, self.anchor + basis_y, "segment", Qt.GlobalColor.magenta))
+            self.line_containers.add(
+                LineContainer(self.anchor + basis_x, self.anchor + basis_y, "segment", Qt.GlobalColor.magenta))
         if self.draw_mode == "para":
             for i in range(self.density):
-                p1 = self.anchor + basis_y * i / (self.density-1)
-                p2 = self.anchor + basis_y * i / (self.density-1) + basis_x
+                p1 = self.anchor + basis_y * i / (self.density - 1)
+                p2 = self.anchor + basis_y * i / (self.density - 1) + basis_x
                 self.line_containers.add(LineContainer(p1, p2, "segment"))
 
     def normal(self):

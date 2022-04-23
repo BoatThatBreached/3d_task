@@ -53,8 +53,8 @@ class IsometricEditor(QWidget):
     def add_point(self, x, y, z):
         self.points.append(np.array([x, y, z]))
 
-    def form_plane(self, p1, p2, p3, draw_mode):
-        plane_container = g.PlaneContainer(p1, p2, p3, draw_mode)
+    def form_plane(self, p1, p2, p3, draw_mode, density=10):
+        plane_container = g.PlaneContainer(p1, p2, p3, draw_mode, density)
         self.plane_containers.add(plane_container)
 
     def form_plane_by_indices(self, p1, p2, p3, draw_mode):
@@ -73,11 +73,6 @@ class IsometricEditor(QWidget):
     def init_figures(self):
         self.points = []
         self.init_square(2)
-        #self.form_plane_by_indices(1, 2, 3, "triangle")
-        #self.form_plane_by_indices(6, 3, 2, "triangle")
-        #self.form_plane_by_indices(3, 1, 6, "triangle")
-        self.connect_two_points(self.points[1], self.points[7], "line")
-        self.connect_two_points(self.points[2], self.points[3], "segment")
 
     def wheelEvent(self, e):
         self.scale += e.angleDelta().y() / 200
@@ -118,10 +113,14 @@ class IsometricEditor(QWidget):
                 i = (i - self.origin) * self.scale + self.origin
                 i[2] = 0
                 if g.length(pos - i) < 4:
-                    self.plane_points.append(p)
+                    if len(self.plane_points) == 0 \
+                            or len(self.plane_points) == 1 and g.length(self.plane_points[0] - p) > 1e-7 \
+                            or len(self.plane_points) == 2 and g.is_plane_valid(p, *self.plane_points):
+                        self.plane_points.append(p)
                     break
             if len(self.plane_points) >= 3:
-                self.form_plane(self.plane_points.pop(0), self.plane_points.pop(0), self.plane_points.pop(0), "triangle")
+                self.form_plane(self.plane_points.pop(0), self.plane_points.pop(0), self.plane_points.pop(0),
+                                "triangle", 10)
 
         self.update()
 
@@ -196,7 +195,7 @@ class IsometricEditor(QWidget):
                 i2 = (i2 - self.origin) * self.scale + self.origin
                 point1 = QPointF(i1[0], self.corner.y() - i1[1])
                 point2 = QPointF(i2[0], self.corner.y() - i2[1])
-                qp.setPen(QPen(Qt.GlobalColor.yellow, 2))
+                qp.setPen(QPen(line_container.color, 2))
                 qp.drawLine(QLineF(point1, point2))
 
     def draw_points(self, qp):
@@ -211,8 +210,10 @@ class IsometricEditor(QWidget):
                 i = i.anchor
             i = (i - self.origin) * self.scale + self.origin
             point = QPointF(i[0], self.corner.y() - i[1])
-            if self.line_point is not None and g.length(self.line_point - p) < 1e-5:
+            if id(self.line_point) == id(p):
                 qp.setPen(QPen(Qt.GlobalColor.red, 2))
+            if id(p) in map(id, self.plane_points):
+                qp.setPen(QPen(Qt.GlobalColor.magenta, 2))
             qp.drawEllipse(point, 3, 3)
 
     def draw_lines(self, qp):
@@ -221,7 +222,7 @@ class IsometricEditor(QWidget):
             i1, i2 = container.project_on_plane(*self.geometry_safe_args())
             if i1 is None or i2 is None:
                 continue
-            qp.setPen(QPen(Qt.GlobalColor.cyan, 2 if container.draw_mode == "segment" else 1))
+            qp.setPen(QPen(container.color, 2 if container.draw_mode == "segment" else 1))
             if container.draw_mode == "line":
                 if g.length(i1[:2] - i2[:2]) < 1e-1:
                     continue

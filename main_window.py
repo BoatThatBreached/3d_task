@@ -1,9 +1,9 @@
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar, QApplication
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar
 
 from isometric import IsometricEditor
-from ui_widgets.windows import AddPointWindow
+from ui_widgets.windows import AddPointWindow, AddLineWindow, AddPlaneWindow
 
 
 class MainWindow(QMainWindow):
@@ -13,12 +13,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Isometric 3d editor")
 
         self.layout = QVBoxLayout()
-        #self.widgets = UIWidgets()
+        # self.widgets = UIWidgets()
 
-        #self.widgets.pointAddWindow.hide()
-        #self.layout.addWidget(self.widgets.pointAddWindow)
+        # self.widgets.pointAddWindow.hide()
+        # self.layout.addWidget(self.widgets.pointAddWindow)
 
-        #self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.editor = IsometricEditor("black")
         self.editor.setLayout(self.layout)
 
@@ -32,21 +32,41 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
         self.windows = list()
 
-        menu = self.menuBar()
+        self.menu = self.menuBar()
+        self.geometry_menu = self.menu.addMenu("Geometry")
 
-        button_action = QAction(QIcon("bug.png"), "Add points", self)
-        button_action.setStatusTip("This is your button")
-        button_action.triggered.connect(self.OpenAddPointWindow)
-        button_action.setCheckable(True)
+        self.form_geometry_menu(self.geometry_menu)
 
-        file_menu = menu.addMenu("Geometry")
-        file_menu.addAction(button_action)
+    def form_geometry_menu(self, menu):
+        add_point = MenuAction("Add points", self,
+                               status_tip="Add some points",
+                               func=lambda s: self.open_window(s, AddLineWindow),
+                               )
 
-    def OpenAddPointWindow(self, s):
-        if len(list(filter(lambda x: type(x) == AddPointWindow, self.windows))) == 0:
-            t = AddPointWindow(self)
+        add_line = MenuAction("Add line", self,
+                              status_tip="Add some lines",
+                              func=lambda s: self.open_window(s, AddPointWindow)
+                              )
+
+        add_plane = MenuAction("Add plane", self,
+                              status_tip="Add some planes",
+                              func=lambda s: self.open_window(s, AddPlaneWindow)
+                              )
+
+        menu.addActions([add_point, add_line, add_plane])
+
+    def open_window(self, s, window):
+        if len(list(filter(lambda x: type(x) == window, self.windows))) == 0:
+            t = window(self)
             self.windows.append(t)
             t.show()
+
+
+class MenuAction(QAction):
+    def __init__(self, *args, status_tip=None, func=None):
+        super().__init__(*args)
+        self.setStatusTip(status_tip)
+        self.triggered.connect(func)
 
 
 class ToolBar(QToolBar):
@@ -55,12 +75,7 @@ class ToolBar(QToolBar):
 
         button_action = QAction(QIcon("icons/Point_Icon.svg"), "Add point", self)
         button_action.setStatusTip("This is your button")
-        #button_action.triggered.connect(lambda s: self.onMyToolBarButtonClick(s, mainWindow))
+        # button_action.triggered.connect(lambda s: self.onMyToolBarButtonClick(s, mainWindow))
 
         self.setIconSize(QSize(20, 20))
         self.addAction(button_action)
-
-
-
-
-

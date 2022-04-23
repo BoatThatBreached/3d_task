@@ -1,22 +1,10 @@
-from PyQt5.QtCore import QRegExp
-from PyQt5.QtGui import QRegExpValidator
+import numpy as np
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QValidator, QDoubleValidator
-from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QLineEdit, QWidget, QHBoxLayout
+from PyQt6.QtGui import QDoubleValidator
+from PyQt6.QtWidgets import QVBoxLayout, QPushButton, QLineEdit, QHBoxLayout, QComboBox
 
 
-class AddPointWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.setGeometry(100, 100, 100, 100)
-
-        self.setLayout(PointCreationWidget())
-        self.setFixedWidth(100)
-        self.setFixedHeight(200)
-
-
-class PointCreationWidget(QVBoxLayout):
+class AddPointWidget(QVBoxLayout):
     def __init__(self, mainWindow):
         super().__init__()
 
@@ -30,10 +18,64 @@ class PointCreationWidget(QVBoxLayout):
         self.addWidget(self.addButton)
 
     def add_point(self, s, mainWindow):
-        x = float(self.input.x.text())
-        y = float(self.input.y.text())
-        z = float(self.input.z.text())
-        mainWindow.editor.add_point(x, y, z)
+        x, y, z = float(self.input.x.text()), float(self.input.y.text()), float(self.input.z.text())
+        mainWindow.editor.add_plane(x, y, z)
+        mainWindow.editor.update()
+
+
+class AddLineWidget(QVBoxLayout):
+    def __init__(self, mainWindow):
+        super().__init__()
+
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        self.input1 = CoordinatesInput()
+        self.input2 = CoordinatesInput()
+        self.addButton = QPushButton()
+        self.addButton.setText("Add Line")
+        self.addButton.clicked.connect(lambda s: self.add_line(s, mainWindow))
+        self.drawingMode = QComboBox()
+        self.drawingMode.addItems(["segment", "line"])
+
+        self.addLayout(self.input1)
+        self.addLayout(self.input2)
+        self.addWidget(self.drawingMode)
+        self.addWidget(self.addButton)
+
+    def add_line(self, s, mainWindow):
+        p1 = np.array([float(self.input1.x.text()), float(self.input1.y.text()), float(self.input1.z.text())])
+        p2 = np.array([float(self.input2.x.text()), float(self.input2.y.text()), float(self.input2.z.text())])
+        drawing_mode = self.drawingMode.currentText()
+        mainWindow.editor.connect_two_points(p1, p2, drawing_mode)
+        mainWindow.editor.update()
+
+
+class AddPlaneWidget(QVBoxLayout):
+    def __init__(self, mainWindow):
+        super().__init__()
+
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        self.input1 = CoordinatesInput()
+        self.input2 = CoordinatesInput()
+        self.input3 = CoordinatesInput()
+        self.addButton = QPushButton()
+        self.addButton.setText("Add Plane")
+        self.addButton.clicked.connect(lambda s: self.add_plane(s, mainWindow))
+        self.drawingMode = QComboBox()
+        self.drawingMode.addItems(["triangle", "para", "plane"])
+
+        self.addLayout(self.input1)
+        self.addLayout(self.input2)
+        self.addLayout(self.input3)
+        self.addWidget(self.drawingMode)
+        self.addWidget(self.addButton)
+
+
+    def add_plane(self, s, mainWindow):
+        p1 = np.array([float(self.input1.x.text()), float(self.input1.y.text()), float(self.input1.z.text())])
+        p2 = np.array([float(self.input2.x.text()), float(self.input2.y.text()), float(self.input2.z.text())])
+        p3 = np.array([float(self.input3.x.text()), float(self.input3.y.text()), float(self.input3.z.text())])
+        drawing_mode = self.drawingMode.currentText()
+        mainWindow.editor.form_plane(p1, p2, p3, drawing_mode)
         mainWindow.editor.update()
 
 

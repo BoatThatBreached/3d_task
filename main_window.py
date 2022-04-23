@@ -38,12 +38,12 @@ class MainWindow(QMainWindow):
         self.form_geometry_menu(self.geometry_menu)
 
     def form_geometry_menu(self, menu):
-        add_point = MenuAction("Add points", self,
+        add_point = MenuAction("Add line", self,
                                status_tip="Add some points",
                                func=lambda s: self.open_window(s, AddLineWindow),
                                )
 
-        add_line = MenuAction("Add line", self,
+        add_line = MenuAction("Add point", self,
                               status_tip="Add some lines",
                               func=lambda s: self.open_window(s, AddPointWindow)
                               )

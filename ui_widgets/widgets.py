@@ -19,7 +19,7 @@ class AddPointWidget(QVBoxLayout):
 
     def add_point(self, s, mainWindow):
         x, y, z = float(self.input.x.text()), float(self.input.y.text()), float(self.input.z.text())
-        mainWindow.editor.add_plane(x, y, z)
+        mainWindow.editor.add_point(x, y, z)
         mainWindow.editor.update()
 
 

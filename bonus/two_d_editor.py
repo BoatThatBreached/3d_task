@@ -92,7 +92,7 @@ class Example(QWidget):
         size = self.size()
         qp.setPen(QPen(Qt.GlobalColor.green, 5))
 
-        for d in filter(lambda point: g.validPoint(point, size), self.dots):
+        for d in filter(lambda point: g.is_point_valid(point, size), self.dots):
             qp.drawEllipse(int(d.x()), int(d.y()), 3, 3)
 
     def drawLines(self, qp):

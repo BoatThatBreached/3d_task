@@ -1,13 +1,5 @@
-toolbar_stylesheet = """
-    QToolBar {
-        background-color: rgb(0,0,0);
-        border: 1px solid ;
-    }
+from PyQt6.QtCore import Qt
 
-    QToolButton { /* all types of tool button */
-    background-color: 000000;
-    }
-"""
 
 toolbar_default_button_stylesheet = """
     QPushButton {
@@ -26,3 +18,10 @@ toolbar_right_clicked_button_stylesheet = """
         background-color: rgb(13, 133, 25);
     }
 """
+
+button_stylesheets = {
+    Qt.MouseButton.LeftButton: toolbar_left_clicked_button_stylesheet,
+    Qt.MouseButton.RightButton: toolbar_right_clicked_button_stylesheet,
+    Qt.MouseButton.NoButton: toolbar_default_button_stylesheet,
+    Qt.MouseButton.MiddleButton: toolbar_default_button_stylesheet,
+}

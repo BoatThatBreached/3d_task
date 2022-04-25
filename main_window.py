@@ -2,8 +2,24 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar, QPushButton
 
 from isometric import IsometricEditor
-from ui_widgets.toolbar import ToolBar
+from ui_widgets.toolbar import ToolBar, on_click_event
 from ui_widgets.windows import AddPointWindow, AddLineWindow, AddPlaneWindow
+
+action_buttons = [
+    ("ui_widgets/icons/Point.svg", on_click_event, "add_point"),
+    ("ui_widgets/icons/Plane.svg", on_click_event, "add_plane"),
+    ("ui_widgets/icons/Moving.svg", on_click_event, "moving"),
+    ("ui_widgets/icons/Rotation.svg", on_click_event, "rotation"),
+    ("ui_widgets/icons/Segment.svg", on_click_event, "add_line"),
+]
+
+color_buttons = [
+    (".", on_click_event, "add_point"),
+    (".", on_click_event, "add_plane"),
+    (".", on_click_event, "moving"),
+    (".", on_click_event, "rotation"),
+    (".", on_click_event, "add_line"),
+]
 
 
 class MainWindow(QMainWindow):
@@ -17,8 +33,10 @@ class MainWindow(QMainWindow):
         self.editor = IsometricEditor("black")
         self.editor.setLayout(self.layout)
 
-        toolbar = ToolBar(self, "My main toolbar", self)
+        toolbar = ToolBar(self, action_buttons, 30, self.editor.mouse_actions, "Main toolbar", self)
         self.addToolBar(toolbar)
+        #toolbar = ToolBar(self, action_buttons, 15, self.editor.mouse_actions, "Palette", self)
+        #self.addToolBar(toolbar)
 
         # Устанавливаем центральный виджет окна. Виджет будет расширяться по умолчанию,
         # заполняя всё пространство окна.

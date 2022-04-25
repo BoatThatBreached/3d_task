@@ -18,6 +18,11 @@ class MouseClickActions:
         self.moving = moving
 
 
+class Colors:
+    def __init__(self, line_color=None):
+        self.line_color = line_color
+
+
 class IsometricEditor(QWidget):
     def __init__(self, theme):
         if theme not in ("white", "black"):

@@ -5,11 +5,29 @@ from PyQt6.QtWidgets import QWidget
 import geom as g
 
 
+class MouseClickActions:
+    def __init__(self, add_line=Qt.MouseButton.NoButton,
+                 add_point=Qt.MouseButton.NoButton,
+                 add_plane=Qt.MouseButton.NoButton,
+                 rotation=Qt.MouseButton.NoButton,
+                 moving=Qt.MouseButton.NoButton,):
+        self.add_line = add_line
+        self.add_point = add_point
+        self.add_plane = add_plane
+        self.rotation = rotation
+        self.moving = moving
+
+
 class IsometricEditor(QWidget):
     def __init__(self, theme):
         if theme not in ("white", "black"):
             raise Exception("Wrong theme: {0}".format(theme))
         self.theme = theme
+        self.mouse_actions = MouseClickActions(add_line=Qt.MouseButton.RightButton,
+ #                                              add_plane=Qt.MouseButton.LeftButton,
+                                               rotation=Qt.MouseButton.LeftButton,
+ #                                              moving=Qt.MouseButton.MiddleButton,
+                                               )
         self.points = []
         self.line_containers = set()
         self.plane_containers = set()
@@ -83,7 +101,7 @@ class IsometricEditor(QWidget):
         self.lastButton = e.button()
         pos = np.array([e.position().x(), self.corner.y() - e.position().y(), 0])
 
-        if self.lastButton == Qt.MouseButton.RightButton:
+        if self.lastButton == self.mouse_actions.add_line:
             for p in self.points:
                 translated = g.get_coordinates(p, self.around_x, self.around_y)
                 line = g.Line(self.camera + self.origin, translated + self.origin)
@@ -101,7 +119,7 @@ class IsometricEditor(QWidget):
                     break
             else:
                 self.line_point = None
-        if self.lastButton == Qt.MouseButton.LeftButton:
+        if self.lastButton == self.mouse_actions.add_plane:
             for p in self.points:
                 translated = g.get_coordinates(p, self.around_x, self.around_y)
                 line = g.Line(self.camera + self.origin, translated + self.origin)
@@ -129,11 +147,11 @@ class IsometricEditor(QWidget):
 
     def mouseMoveEvent(self, e):
         delta = e.position() - self.lastPos
-        if self.lastButton == Qt.MouseButton.LeftButton:
+        if self.lastButton == self.mouse_actions.rotation:
             self.around_x += -delta.y() / self.intensity
             self.around_y += delta.x() / self.intensity
 
-        if self.lastButton == Qt.MouseButton.MiddleButton:
+        if self.lastButton == self.mouse_actions.moving:
             self.origin[0] += delta.x()
             self.origin[1] -= delta.y()
 

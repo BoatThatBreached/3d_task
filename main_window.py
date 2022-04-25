@@ -1,8 +1,8 @@
-from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar, QPushButton
 
 from isometric import IsometricEditor
+from ui_widgets.toolbar import ToolBar
 from ui_widgets.windows import AddPointWindow, AddLineWindow, AddPlaneWindow
 
 
@@ -13,23 +13,18 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Isometric 3d editor")
 
         self.layout = QVBoxLayout()
-        # self.widgets = UIWidgets()
 
-        # self.widgets.pointAddWindow.hide()
-        # self.layout.addWidget(self.widgets.pointAddWindow)
-
-        # self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.editor = IsometricEditor("black")
         self.editor.setLayout(self.layout)
 
-        toolbar = ToolBar("My main toolbar", self)
+        toolbar = ToolBar(self, "My main toolbar", self)
+        self.addToolBar(toolbar)
 
         # Устанавливаем центральный виджет окна. Виджет будет расширяться по умолчанию,
         # заполняя всё пространство окна.
         self.setCentralWidget(self.editor)
         self.setGeometry(200, 200, 640, 480)
         self.setWindowTitle('Isometric 3D Editor')
-        self.addToolBar(toolbar)
         self.windows = list()
 
         self.menu = self.menuBar()
@@ -68,22 +63,3 @@ class MenuAction(QAction):
         self.setStatusTip(status_tip)
         self.triggered.connect(func)
 
-
-class ToolBar(QToolBar):
-    def __init__(self, name, mainWindow):
-        super().__init__(name)
-
-        button_action = QAction(QIcon("icons/Point.svg"), "Add point", self)
-        self.addAction(button_action)
-        button_action = QAction(QIcon("icons/Plane.svg"), "Add point", self)
-        self.addAction(button_action)
-        button_action = QAction(QIcon("icons/Moving.svg"), "Add point", self)
-        self.addAction(button_action)
-        button_action = QAction(QIcon("icons/Rotation.svg"), "Add point", self)
-        self.addAction(button_action)
-        button_action = QAction(QIcon("icons/Segment.svg"), "Add point", self)
-        self.addAction(button_action)
-        #button_action.setStatusTip("This is your button")
-        # button_action.triggered.connect(lambda s: self.onMyToolBarButtonClick(s, mainWindow))
-
-        self.setIconSize(QSize(30, 30))

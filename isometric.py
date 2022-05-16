@@ -24,7 +24,7 @@ class Colors:
 
 
 class IsometricEditor(QWidget):
-    def __init__(self, theme):
+    def __init__(self, theme, data=None):
         if theme not in ("white", "black"):
             raise Exception("Wrong theme: {0}".format(theme))
         self.theme = theme
@@ -36,7 +36,7 @@ class IsometricEditor(QWidget):
         self.points = []
         self.line_containers = set()
         self.plane_containers = set()
-        self.init_figures()
+        #self.init_figures()
         self.corner = QPointF(0, 480)
         self.origin = np.array([320, 240, 0])
         self.around_x = 0
@@ -57,8 +57,23 @@ class IsometricEditor(QWidget):
 
         super().__init__()
 
+        if data:
+            self.update_objects(data)
+
         self.init_ui()
 
+    def update_objects(self, data):
+        self.points.clear()
+        self.plane_containers.clear()
+        self.line_containers.clear()
+
+        for point in data[0]:
+            self.add_point(*point)
+        for dots in data[1]:
+            self.form_plane(self.points[dots[0]],
+                            self.points[dots[1]],
+                            self.points[dots[2]],
+                            "triangle", 10)
     def geometry_safe_args(self):
         return self.screen, self.camera, self.origin, self.around_x, self.around_y
 

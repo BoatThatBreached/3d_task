@@ -1,6 +1,7 @@
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QToolBar, QPushButton
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout
 
+from file_parser import get_data_from_file
 from isometric import IsometricEditor
 from ui_widgets.toolbar import ToolBar, on_click_event
 from ui_widgets.windows import AddPointWindow, AddLineWindow, AddPlaneWindow
@@ -30,7 +31,7 @@ class MainWindow(QMainWindow):
 
         self.layout = QVBoxLayout()
 
-        self.editor = IsometricEditor("black")
+        self.editor = IsometricEditor("black", get_data_from_file("chair.obj"))
         self.editor.setLayout(self.layout)
 
         toolbar = ToolBar(self, action_buttons, 30, self.editor.mouse_actions, "Main toolbar", self)

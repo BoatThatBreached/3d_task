@@ -93,6 +93,9 @@ class IsometricEditor(QWidget):
 
     def form_plane(self, p1, p2, p3, draw_mode, density=10):
         plane_container = g.PlaneContainer(p1, p2, p3, draw_mode, density)
+        self.add_point(*p1)
+        self.add_point(*p2)
+        self.add_point(*p3)
         self.plane_containers.add(plane_container)
 
     def form_plane_by_indices(self, p1, p2, p3, draw_mode):

@@ -220,24 +220,28 @@ class IsometricEditor(QWidget):
             qp.drawEllipse(point1, 3, 3)
 
     def draw_planes(self, qp):
+        pts = []
         for container in self.plane_containers:
             for line_container in container.line_containers:
                 i1, i2 = line_container.project_on_plane(*self.geometry_safe_args())
                 if i1 is None or i2 is None:
                     continue
 
-                if line_container.draw_mode == "line":
-                    if g.length(i1[:2] - i2[:2]) < 1e-1:
-                        continue
-                    direction = g.get_vector_with_length(i1 - i2, 1)
-                    i1 -= direction * 1000
-                    i2 += direction * 1000
+                # if line_container.draw_mode == "line":
+                #     if g.length(i1[:2] - i2[:2]) < 1e-1:
+                #         continue
+                #     direction = g.get_vector_with_length(i1 - i2, 1)
+                #     i1 -= direction * 1000
+                #     i2 += direction * 1000
                 i1 = (i1 - self.origin) * self.scale + self.origin
                 i2 = (i2 - self.origin) * self.scale + self.origin
                 point1 = QPointF(i1[0], self.corner.y() - i1[1])
                 point2 = QPointF(i2[0], self.corner.y() - i2[1])
-                qp.setPen(QPen(line_container.color, 2))
-                qp.drawLine(QLineF(point1, point2))
+                pts.append(point1)
+                pts.append(point2)
+        #pts = set(pts)
+        qp.setPen(QPen(Qt.GlobalColor.magenta, 2))
+        qp.drawPolyline(pts[0], *pts[1:])
 
     def draw_points(self, qp):
         for p in self.points:

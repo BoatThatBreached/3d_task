@@ -164,16 +164,16 @@ class PlaneContainer:
         basis_x = self.p1 - self.anchor
         basis_y = self.p2 - self.anchor
         if self.draw_mode == "triangle":
-            for i in range(1, self.density):
-                p1 = self.anchor + basis_y * i / (self.density - 1)
-                p2 = self.anchor + basis_y * i / (self.density - 1) + basis_x * (self.density - 1 - i) / (
-                        self.density - 1)
-                self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
-            for i in range(1, self.density):
-                p1 = self.anchor + basis_x * i / (self.density - 1)
-                p2 = self.anchor + basis_x * i / (self.density - 1) + basis_y * (self.density - 1 - i) / (
-                        self.density - 1)
-                self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
+            # for i in range(1, self.density):
+            #     p1 = self.anchor + basis_y * i / (self.density - 1)
+            #     p2 = self.anchor + basis_y * i / (self.density - 1) + basis_x * (self.density - 1 - i) / (
+            #             self.density - 1)
+            #     self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
+            # for i in range(1, self.density):
+            #     p1 = self.anchor + basis_x * i / (self.density - 1)
+            #     p2 = self.anchor + basis_x * i / (self.density - 1) + basis_y * (self.density - 1 - i) / (
+            #             self.density - 1)
+            #     self.line_containers.add(LineContainer(p1, p2, "segment", Qt.GlobalColor.yellow))
             self.line_containers.add(
                 LineContainer(self.anchor, self.anchor + basis_x, "segment", Qt.GlobalColor.magenta))
             self.line_containers.add(
